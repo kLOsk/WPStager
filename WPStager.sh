@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Requirements to run WPStager:
+# Requirements to run WPStager (https://github.com/kLOsk/WPStager):
 ## MAMP for Mac (Free Version) https://www.mamp.info/
 ## MAMP Local Domain Mod http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/
 ## Custom OSX Group of www-data
@@ -83,7 +83,6 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	#
 	#Require a cloudflare account
 	#
-	CFSECRET="464933f93957117fc184ee121bfaf7b3609e4"
 	CFEMAIL="daniel@tuningmatters.com"
 	CFDOMAIN="daniel-klose.com"
 	CFSERVER="5.9.12.36"
