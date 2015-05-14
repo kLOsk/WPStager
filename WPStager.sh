@@ -32,6 +32,7 @@ SSSSHUSER="change_me" # Your Staging Server SSH user
 ## Work around for www-data group
 ## Support for nginx
 ## cleanup
+## sanity checks on inputs
 
 ##This script is written for Mac OSX MAMP Free Version (https://www.mamp.info/)
 #
@@ -80,29 +81,46 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	chmod -R g+w $LOCALDOMAIN
 	cd $LOCALDOMAIN
 
-	#
-	#Require a cloudflare account
-	#
-	CFEMAIL="daniel@tuningmatters.com"
-	CFDOMAIN="daniel-klose.com"
-	CFSERVER="5.9.12.36"
+	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
+	read CF
+	CF=${CF:-y}
+	if [ "$CF" = "y" ] || [ "$CF" = "Y" ]; then
+		#
+		#Require a cloudflare account
+		#
+		if [ "$CFEMAIL" = "change_me" ]; then
+			printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com)"
+			read CFEMAIL
+		fi
+		if [ "$CFDOMAIN" = "change_me" ]; then
+			printf "CloudFlare administrated Staging Domain (i.e. WPStager.com):"
+			read CFDOMAIN
+		fi
+		if [ "$CFSERVER" = "change_me" ]; then
+			printf "The IP address CloudFlare will route the new subdomain to (i.e. 34.23.1.34):"
+			read CFSERVER
+		fi
 
-	printf "What's your staging domain (i.e. ${LOCALDOMAIN%%.*}.$CFDOMAIN)? "
-	read FULLDOMAIN
-	FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
-	SUBDOMAIN=${FULLDOMAIN%%.*}
+		printf "What's your staging domain (i.e. ${LOCALDOMAIN%%.*}.$CFDOMAIN)? "
+		read FULLDOMAIN
+		FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
+		SUBDOMAIN=${FULLDOMAIN%%.*}
 
-	echo "Generating DNS Entry with Cloudflare"
-	curl https://www.cloudflare.com/api_json.html \
-  -d "a=rec_new" \
-  -d "tkn=$CFSECRET" \
-  -d "email=$CFEMAIL" \
-  -d "z=$CFDOMAIN" \
-  -d "type=A" \
-  -d "name=$SUBDOMAIN" \
-  -d "content=$CFSERVER" \
-  -d "service_mode=1" \
-  -d "ttl=1"
+		echo "Generating DNS Entry with Cloudflare"
+		curl https://www.cloudflare.com/api_json.html \
+		-d "a=rec_new" \
+		-d "tkn=$CFSECRET" \
+		-d "email=$CFEMAIL" \
+		-d "z=$CFDOMAIN" \
+		-d "type=A" \
+		-d "name=$SUBDOMAIN" \
+		-d "content=$CFSERVER" \
+		-d "service_mode=1" \
+		-d "ttl=1"
+	else
+			printf "What's your staging domain (i.e. clientsite.WPStager.com)? "
+			read FULLDOMAIN
+	fi
 
   if [ "$SSMYSQLSERVER" = "change_me" ]; then
 		printf "Staging Server MySQL Server: (localhost)"
