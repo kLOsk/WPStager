@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Requirements to run WPStager (https://github.com/kLOsk/WPStager):
 ## MAMP for Mac (Free Version) https://www.mamp.info/
@@ -27,6 +27,10 @@ SSMYSQLPWD="change_me" # Your MySQL Staging Server password
 SSSSH="change_me" # Your Staging Server SSH address (e.g. 34.23.56.12 or e.g. stageserver.com)
 SSSSHUSER="change_me" # Your Staging Server SSH user
 
+################################################################################
+## All Done! Don't change anything below this line, or hell will break loose! ##
+################################################################################
+
 ## To Do
 ## Check if necessary tools are installed
 ## Work around for www-data group
@@ -34,21 +38,37 @@ SSSSHUSER="change_me" # Your Staging Server SSH user
 ## cleanup
 ## sanity checks on inputs
 
-##This script is written for Mac OSX MAMP Free Version (https://www.mamp.info/)
+clear
+
+## Sanity check for programs existence
+#Global declaration area
+declare -r T_CMDS="curl wordmove"
+
+#Sanity check: Test if commands are in $PATH
+for t_cmd in $T_CMDS
+do
+    type -P "$t_cmd" >> /dev/null && : || {
+        echo -e "$t_cmd not found in PATH ." >&2
+        exit 1
+    }
+done
+
+#
+## Switch to MAMP htdocs directory
 #
 cd /Applications/MAMP/htdocs
 printf "What would you like to name your new WordPress development domain (i.e. devsite.dev)? "
 read LOCALDOMAIN
 
 #
-##Setup local domains (see for this to work http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/)
+## Add the new local development domain name to /etc/hosts
 #
 sudo sh -c "echo \"127.0.0.1    $LOCALDOMAIN\" >> /etc/hosts"
 
 echo "Downloading WordPress Stable, see http://wordpress.org/"
 curl -L -O https://wordpress.org/latest.tar.gz
 tar -xf latest.tar.gz
-mv wordpress $LOCALDOMAIN
+mv wordpress "$LOCALDOMAIN"
 rm latest.tar.gz
 
 if [ "$MYSQLUSER" = "change_me" ]; then
@@ -63,10 +83,10 @@ if [ "$MYSQLPWD" = "change_me" ]; then
 	MYSQLPWD=${MYSQLPWD:-root}
 fi
 
-printf "What would you like to name your new database (i.e. ${LOCALDOMAIN%%.*})? "
+printf "What would you like to name your new database (i.e. %s)? " "${LOCALDOMAIN%%.*}"
 read NEWDB
 NEWDB=${NEWDB:-${LOCALDOMAIN%%.*}}
-echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u $MYSQLUSER -p$MYSQLPWD
+echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u"$MYSQLUSER" -p"$MYSQLPWD"
 
 printf "Do you want to use an online Staging Environment? (Y/n)"
 read STAGING
@@ -77,9 +97,9 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	#
 	#Require local setup of www-data group - see if it can be done without!
 	#
-	chgrp -R www-data $LOCALDOMAIN
-	chmod -R g+w $LOCALDOMAIN
-	cd $LOCALDOMAIN
+	chgrp -R www-data "$LOCALDOMAIN"
+	chmod -R g+w "$LOCALDOMAIN"
+	cd "$LOCALDOMAIN"
 
 	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
 	read CF
@@ -101,7 +121,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 			read CFSERVER
 		fi
 
-		printf "What's your staging domain (i.e. ${LOCALDOMAIN%%.*}.$CFDOMAIN)? "
+		printf "What's your staging domain (i.e. %s.%s)? " "${LOCALDOMAIN%%.*}" "$CFDOMAIN"
 		read FULLDOMAIN
 		FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
 		SUBDOMAIN=${FULLDOMAIN%%.*}
@@ -123,7 +143,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	fi
 
   if [ "$SSMYSQLSERVER" = "change_me" ]; then
-		printf "Staging Server MySQL Server: (localhost)"
+		printf "\nStaging Server MySQL Server: (localhost)"
 		read SSMYSQLSERVER
 		SSMYSQLSERVER=${SSMYSQLSERVER:-localhost}
 	fi
@@ -140,7 +160,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	fi
 
 	if [ "$SSSSH" = "change_me" ]; then
-		printf "Staging Server SSH Host: ($CFSERVER)"
+		printf "Staging Server SSH Host: (%s)" "$CFSERVER"
 		read SSSSH
 		SSSSH=${SSSSH:-$CFSERVER}
 	fi
@@ -222,11 +242,11 @@ EOT
 	#
 	#Requires virtualhost setup on staging server also needs apache
 	#
-	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R $SSSSHUSER:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
+	ssh -t "$SSSSHUSER"@"$SSSSH" "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R $SSSSHUSER:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
 fi
 
 if [ -f ./wp-config.php ]; then
-	open http://$LOCALDOMAIN/wp-admin/install.php
+	open http://"$LOCALDOMAIN"/wp-admin/install.php
 else
 	cp -n ./wp-config-sample.php ./wp-config.php
 	SECRETKEYS=$(curl -L https://api.wordpress.org/secret-key/1.1/salt/)
@@ -238,7 +258,7 @@ else
 	sed -i '' -e "s/${DBUSER}/${MYSQLUSER}/g" wp-config.php
 	sed -i '' -e "s/${DBPASS}/${MYSQLPWD}/g" wp-config.php
 	sed -i '' -e "s/${DBNAME}/${NEWDB}/g" wp-config.php
-	open http://$LOCALDOMAIN/wp-admin/install.php
+	open http://"$LOCALDOMAIN"/wp-admin/install.php
 fi
 
 echo "All done! Now finish the WP installation and trigger Wordmove with: wordmove push --all"
