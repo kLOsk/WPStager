@@ -109,8 +109,12 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 		#Require a cloudflare account
 		#
 		if [ "$CFEMAIL" = "change_me" ]; then
-			printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com)"
+			printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com):"
 			read CFEMAIL
+		fi
+		if [ "$CFSECRET" = "change_me" ]; then
+			printf "CloudFlare Api Key:"
+			read CFSECRET
 		fi
 		if [ "$CFDOMAIN" = "change_me" ]; then
 			printf "CloudFlare administrated Staging Domain (i.e. WPStager.com):"
