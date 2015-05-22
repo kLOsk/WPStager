@@ -32,10 +32,12 @@ SSSSHUSER="change_me" # Your Staging Server SSH user
 ################################################################################
 
 ## To Do
-## Check if necessary tools are installed
+## Check if necessary tools are installed: command -v foo >/dev/null 2>&1 || { echo >&2 "I require foo but it's not installed.  Aborting."; exit 1; }
 ## Work around for www-data group
 ## Support for nginx
 ## cleanup
+## add git init and github support
+## consider creating auto config
 ## sanity checks on inputs
 
 clear
@@ -52,6 +54,30 @@ do
         exit 1
     }
 done
+
+## Check if Apache and MySQL are running
+WEBSERVER='httpd'
+
+if ps ax | grep -v grep | grep $WEBSERVER > /dev/null
+then
+    echo "$WEBSERVER service running, everything is fine"
+else
+    echo "$WEBSERVER is not running"
+    echo "Make sure to start MAMP before running WPStager"
+    open "/Applications/MAMP/MAMP.app"
+    exit
+fi
+
+DBSERVER='mysql'
+if ps ax | grep -v grep | grep $DBSERVER > /dev/null
+then
+    echo "$DBSERVER service running, everything is fine"
+else
+    echo "$DBSERVER is not running"
+    echo "Make sure to start MAMP before running WPStager"
+    open "/Applications/MAMP/MAMP.app"
+    exit
+fi
 
 #
 ## Switch to MAMP htdocs directory
