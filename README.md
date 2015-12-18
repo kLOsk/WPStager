@@ -1,10 +1,7 @@
 ![](http://i.imgur.com/KNVcUyG.png)
 
-WPStager
-========
-
-A simple WordPress Provisioning and Staging Tool for Humans
------------------------------------------------------------
+WPStager: A simple WordPress Provisioning and Staging Tool for Humans
+=====================================================================
 
 ![](http://i.imgur.com/Wp5qQVR.gif)
 
