@@ -6,7 +6,7 @@ WPStager
 A simple WordPress Provisioning and Staging Tool for Humans
 -----------------------------------------------------------
 
-![](http://i.imgur.com/Wp5qQVR.gifv)
+![](http://i.imgur.com/Wp5qQVR.gif)
 
 ## Features
 
