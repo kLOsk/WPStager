@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
 # Requirements to run WPStager (https://github.com/kLOsk/WPStager):
-## MAMP for Mac (Free Version) https://www.mamp.info/
+## MAMP for Mac (Free Version) https://www.mamp.info/ (autocheck if installed)
 ## (included in tool now) MAMP Local Domain Mod http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/
 ## (not needed anymore) Custom OSX Group of www-data
 ## CloudFlare DNS (Free Version) www.cloudflare.com
-## WordMove https://github.com/welaika/wordmove and Public SSH Keys
+## WordMove https://github.com/welaika/wordmove (auto sudo install)
+## Public SSH Keys
 ## Apache WebServer with MySQL on Staging Server
 ## Virtualhost Script on Staging Server https://github.com/RoverWire/virtualhost
 ## LiveReload Desktop Server http://download.livereload.com/LiveReload-2.3.71.zip
@@ -102,6 +103,15 @@ else
   exit 1
 fi
 
+if [ -d "/Applications/MAMP/MAMP.app" ]
+then
+    e_success "MAMP installed at /Applications/MAMP/MAMP.app"
+    e_warning "Please make sure to use the default MAMP htdocs directory at /Applications/MAMP/htdocs"
+else
+    e_error "Error: MAMP is not installed. Please install MAMP from https://www.mamp.info/"
+    exit 1
+fi
+
 # Check for HomeBrew
 if type_exists 'brew'; then
   e_success "Homebrew detected"
@@ -132,6 +142,30 @@ if [ $? -eq 0 ]; then
 else
   e_error "Something went wrong with homebrew. Exiting..."
   exit 1
+fi
+
+# Check for Wordmove
+if type_exists 'wordmove'; then
+  e_success "Wordmove detected"
+else
+  e_error "Wordmove has not been installed yet."
+  e_note "WPStager can install Wordmove for you (globally with sudo). If you want your Ruby Gems to be installed locally only, please install Wordmove manually (https://github.com/welaika/wordmove)"
+  printf "Install Wordmove globally? (Y/n)"
+	read WM
+	WM=${WM:-y}
+	if [ "$WM" = "y" ] || [ "$WM" = "Y" ]; then
+    e_warning "Installing Wordmove..."
+    sudo gem install wordmove
+    if [ $? -eq 0 ]; then
+      e_success "Wordmove installed"
+    else
+      e_error "Something went wrong. Please visit https://github.com/welaika/wordmove"
+      exit 1
+    fi
+  else
+    e_error "WPStager requires Wordmove to work. Please install it manually from https://github.com/welaika/wordmove"
+    exit 1
+  fi
 fi
 
 ## Sanity check for programs existence
@@ -256,18 +290,19 @@ read NEWDB
 NEWDB=${NEWDB:-${LOCALDOMAIN%%.*}}
 echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u"$MYSQLUSER" -p"$MYSQLPWD"
 
+cd "$LOCALDOMAIN"
+
 printf "Do you want to use an online Staging Environment? (y/N)"
 read STAGING
 STAGING=${STAGING:-n}
 if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 
-	echo "Adjust Group Ownership and Rights for Staging Environment"
+	#echo "Adjust Group Ownership and Rights for Staging Environment"
 	#
 	#Require local setup of www-data group - see if it can be done without!
 	#
 	#chgrp -R www-data "$LOCALDOMAIN"
 	#chmod -R g+w "$LOCALDOMAIN"
-	cd "$LOCALDOMAIN"
 
 	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
 	read CF
@@ -417,8 +452,6 @@ EOT
 	ssh -t "$SSSSHUSER"@"$SSSSH" "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
 fi
 
-cd "$LOCALDOMAIN"
-
 if [ -f ./wp-config.php ]; then
 	open http://"$LOCALDOMAIN"/wp-admin/install.php
 else
@@ -439,4 +472,4 @@ e_success "All done! Now finish the WP installation and trigger Wordmove with: w
 #
 #uses livereload desktop app
 #
-open "livereload:add?path=/Applications/MAMP/htdocs/$LOCALDOMAIN/wp-content"
+#open "livereload:add?path=/Applications/MAMP/htdocs/$LOCALDOMAIN/wp-content"

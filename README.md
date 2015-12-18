@@ -5,6 +5,8 @@ WPStager
 
 A simple WordPress Provisioning and Staging Tool for Humans
 
+## Note: This is currently still very Alpha and doesn't work as intended, so don't use it :)
+
 ![](http://i.imgur.com/Wp5qQVR.gif)
 
 ## Features
@@ -21,7 +23,7 @@ A simple WordPress Provisioning and Staging Tool for Humans
 
 - Mac OSX
 - Homebrew [http://brew.sh/](http://brew.sh/) (will automatically install if not available)
-- MAMP [https://www.mamp.info/](https://www.mamp.info/)
+- MAMP (Free Version) [https://www.mamp.info/](https://www.mamp.info/)
 - Wordmove (will automatically install if not available)
 - Cloudflare DNS [https://www.cloudflare.com/](https://www.cloudflare.com/) (Optional: Only need for remote staging server)
 - Apache and MySQL on staging environment
