@@ -92,7 +92,7 @@ return 1
 
 clear
 
-e_header "WPStager - A WordPress Development Tool for Humans"
+e_header "WPStager - A simple WordPress Provisioning and Staging Tool for Humans"
 e_underline "Please keep in mind that this script makes heavy use of third party software. Some of which is being installed automatically and some isn't."
 
 if is_os "darwin"; then
