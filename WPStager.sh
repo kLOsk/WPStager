@@ -2,8 +2,8 @@
 #
 # Requirements to run WPStager (https://github.com/kLOsk/WPStager):
 ## MAMP for Mac (Free Version) https://www.mamp.info/
-## MAMP Local Domain Mod http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/
-## Custom OSX Group of www-data
+## (included in tool now) MAMP Local Domain Mod http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/
+## (not needed anymore) Custom OSX Group of www-data
 ## CloudFlare DNS (Free Version) www.cloudflare.com
 ## WordMove https://github.com/welaika/wordmove and Public SSH Keys
 ## Apache WebServer with MySQL on Staging Server
@@ -31,16 +31,108 @@ SSSSHUSER="change_me" # Your Staging Server SSH user
 ## All Done! Don't change anything below this line, or hell will break loose! ##
 ################################################################################
 
+#
+#Set Colors
+#
+
+bold=$(tput bold)
+underline=$(tput sgr 0 1)
+reset=$(tput sgr0)
+
+purple=$(tput setaf 171)
+red=$(tput setaf 1)
+green=$(tput setaf 76)
+tan=$(tput setaf 3)
+blue=$(tput setaf 38)
+
+#
+# Headers and  Logging
+#
+
+e_header() { printf "\n${bold}${purple}==========  %s  ==========${reset}\n" "$@"
+}
+e_arrow() { printf "➜ $@\n"
+}
+e_success() { printf "${green}✔ %s${reset}\n" "$@"
+}
+e_error() { printf "${red}✖ %s${reset}\n" "$@"
+}
+e_warning() { printf "${tan}➜ %s${reset}\n" "$@"
+}
+e_underline() { printf "${underline}${bold}%s${reset}\n" "$@"
+}
+e_bold() { printf "${bold}%s${reset}\n" "$@"
+}
+e_note() { printf "${underline}${bold}${blue}Note:${reset}  ${blue}%s${reset}\n" "$@"
+}
+
+##Check for packages and OS
+
+type_exists() {
+if [ $(type -P $1) ]; then
+  return 0
+fi
+return 1
+}
+
+is_os() {
+if [[ "${OSTYPE}" == $1* ]]; then
+  return 0
+fi
+return 1
+}
+
 ## To Do
 ## Check if necessary tools are installed: command -v foo >/dev/null 2>&1 || { echo >&2 "I require foo but it's not installed.  Aborting."; exit 1; }
-## Work around for www-data group
+## Work around for www-data group (This requires rsync 3.1.1 from homebrew and root on the server to change the owner -> rsync_options: "-og --chown=www-data:www-data --no-perms --chmod=ugo=rwX" )
 ## Support for nginx
 ## cleanup
-## add git init and github support
 ## consider creating auto config
 ## sanity checks on inputs
 
 clear
+
+e_header "WPStager - A WordPress Development Tool for Humans"
+e_underline "Please keep in mind that this script makes heavy use of third party software. Some of which is being installed automatically and some isn't."
+
+if is_os "darwin"; then
+  e_success "Mac OSX detected"
+else
+  e_error "You are not using a Mac. Please understand that WPStager currently only works on Mac OSX!"
+  exit 1
+fi
+
+# Check for HomeBrew
+if type_exists 'brew'; then
+  e_success "Homebrew detected"
+else
+  e_error "Homebrew has not been installed yet."
+  printf "Do you want WPStager to install Homebrew for you (http://brew.sh/)? (Y/n)"
+	read HB
+	HB=${HB:-y}
+	if [ "$HB" = "y" ] || [ "$HB" = "Y" ]; then
+    e_warning "Installing Homebrew..."
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    if [ $? -eq 0 ]; then
+      e_success "Homebrew installed"
+    else
+      e_error "Something went wrong Please visit http://brew.sh/"
+      exit 1
+    fi
+  else
+    e_error "WPStager requires Homebrew to work. Please install it manually from http://brew.sh/"
+    exit 1
+  fi
+fi
+
+e_warning "Installing rsync and gnu-sed since OSX ships with outdated versions"
+brew install rsync gnu-sed
+if [ $? -eq 0 ]; then
+  e_success "rsync and gnu-sed successfully updated"
+else
+  e_error "Something went wrong with homebrew. Exiting..."
+  exit 1
+fi
 
 ## Sanity check for programs existence
 #Global declaration area
@@ -60,10 +152,10 @@ WEBSERVER='httpd'
 
 if ps ax | grep -v grep | grep $WEBSERVER > /dev/null
 then
-    echo "$WEBSERVER service running, everything is fine"
+    e_success "$WEBSERVER service running, everything is fine"
 else
-    echo "$WEBSERVER is not running"
-    echo "Make sure to start MAMP before running WPStager"
+    e_error "$WEBSERVER is not running"
+    e_note "Make sure to start MAMP before running WPStager"
     open "/Applications/MAMP/MAMP.app"
     exit
 fi
@@ -71,12 +163,62 @@ fi
 DBSERVER='mysql'
 if ps ax | grep -v grep | grep $DBSERVER > /dev/null
 then
-    echo "$DBSERVER service running, everything is fine"
+    e_success "$DBSERVER service running, everything is fine"
 else
-    echo "$DBSERVER is not running"
-    echo "Make sure to start MAMP before running WPStager"
+    e_error "$DBSERVER is not running"
+    e_note "Make sure to start MAMP before running WPStager"
     open "/Applications/MAMP/MAMP.app"
     exit
+fi
+
+if grep -Fxq "Listen 80" /Applications/MAMP/conf/apache/httpd.conf
+then
+    e_success "Apache listening on port 80"
+else
+    e_error "Apache not configured to listen on port 80"
+    e_note "Fixing Apache to listen on port 80"
+    gsed -i.bak '/Listen 8888/i Listen 80' /Applications/MAMP/conf/apache/httpd.conf
+    if [ $? -eq 0 ]; then
+      e_success "Apache configured to listen on port 80. Please restart MAMP now"
+    else
+      e_error "Something went wrong when changing the Apache configuration"
+      exit 1
+    fi
+fi
+
+if grep -Fxq "#Include /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf" /Applications/MAMP/conf/apache/httpd.conf
+then
+  e_error "Apache not configured to include dynamic vhosts"
+  e_note "Fixing Apache to include vhosts"
+  gsed -i.bak '/httpd-vhosts\.conf/s/^#//g' /Applications/MAMP/conf/apache/httpd.conf
+  if [ $? -eq 0 ]; then
+    e_success "Apache configured to include dynamic vhosts. Please restart MAMP now"
+  else
+    e_error "Something went wrong when changing the Apache configuration"
+    exit 1
+  fi
+else
+  e_success "Apache includes dynamic vhosts conf"
+fi
+
+if grep -Fxq "#Dynamic Vhost" /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+then
+    e_success "Apache configured for dynamic vhosts"
+else
+    e_error "Apache not configured for dynamic vhosts"
+    e_note "Fixing Apache to support dynamic vhosts"
+    echo $'\n' >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "#Dynamic Vhost" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "<VirtualHost *:80>" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "    UseCanonicalName Off" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "    VirtualDocumentRoot /Applications/MAMP/htdocs/%0" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "</VirtualHost>" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    if [ $? -eq 0 ]; then
+      e_success "Apache configured for dynamic vhosts"
+    else
+      e_error "Something went wrong when changing the Apache configuration"
+      exit 1
+    fi
 fi
 
 #
@@ -114,17 +256,17 @@ read NEWDB
 NEWDB=${NEWDB:-${LOCALDOMAIN%%.*}}
 echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u"$MYSQLUSER" -p"$MYSQLPWD"
 
-printf "Do you want to use an online Staging Environment? (Y/n)"
+printf "Do you want to use an online Staging Environment? (y/N)"
 read STAGING
-STAGING=${STAGING:-y}
+STAGING=${STAGING:-n}
 if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 
 	echo "Adjust Group Ownership and Rights for Staging Environment"
 	#
 	#Require local setup of www-data group - see if it can be done without!
 	#
-	chgrp -R www-data "$LOCALDOMAIN"
-	chmod -R g+w "$LOCALDOMAIN"
+	#chgrp -R www-data "$LOCALDOMAIN"
+	#chmod -R g+w "$LOCALDOMAIN"
 	cd "$LOCALDOMAIN"
 
 	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
@@ -252,7 +394,7 @@ staging:
     user: "$SSSSHUSER"
   #   password: "password" # password is optional, will use public keys if available.
   #   port: 22 # Port is optional
-  #   rsync_options: "--verbose" # Additional rsync options, optional
+    rsync_options: "-og --chown=www-data:www-data --no-perms --chmod=ugo=rwX"
   #   gateway: # Gateway is optional
   #     host: "host"
   #     user: "user"
@@ -272,8 +414,10 @@ EOT
 	#
 	#Requires virtualhost setup on staging server also needs apache
 	#
-	ssh -t "$SSSSHUSER"@"$SSSSH" "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R $SSSSHUSER:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
+	ssh -t "$SSSSHUSER"@"$SSSSH" "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
 fi
+
+cd "$LOCALDOMAIN"
 
 if [ -f ./wp-config.php ]; then
 	open http://"$LOCALDOMAIN"/wp-admin/install.php
@@ -291,7 +435,7 @@ else
 	open http://"$LOCALDOMAIN"/wp-admin/install.php
 fi
 
-echo "All done! Now finish the WP installation and trigger Wordmove with: wordmove push --all"
+e_success "All done! Now finish the WP installation and trigger Wordmove with: wordmove push --all"
 #
 #uses livereload desktop app
 #
