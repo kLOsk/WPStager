@@ -22,6 +22,7 @@ CFSECRET="change_me" # Your CloudFlare Api key. Can be found here: https://www.c
 CFEMAIL="change_me" # Your CloudFlare e-mail account (e.g. howdy@wordpress.org)
 CFDOMAIN="change_me" # The second level domain which is managed by CloudFlare (e.g. stageserver.com)
 CFSERVER="change_me" # The IP address of your staging server CF should point the new subdomain to (e.g. 134.12.34.56)
+SSWEBDIR="change_me" # The root directory of your webserver. With Apache 2.2 that used to be /var/www but now with 2.4 this is /var/www/html - No trailing slash at the end!
 SSMYSQLSERVER="change_me" # Your MySQL Staging Server IP (e.g. localhost (if run on the staging webserver) or e.g. 56.137.45.23)
 SSMYSQLUSER="change_me" # Your MySQL Staging Server user
 SSMYSQLPWD="change_me" # Your MySQL Staging Server password
@@ -389,8 +390,14 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 			read FULLDOMAIN
 	fi
 
+  if [ "$SSWEBDIR" = "change_me" ]; then
+		printf "\nWhere is the web root directory of your staging server? : (/var/www)"
+		read SSWEBDIR
+		SSWEBDIR=${SSWEBDIR:-/var/www}
+	fi
+
   if [ "$SSMYSQLSERVER" = "change_me" ]; then
-		printf "\nStaging Server MySQL Host Address (Hit enter if MySQL server runs locally on the staging server): (localhost)"
+		printf "Staging Server MySQL Host Address (Hit enter if MySQL server runs locally on the staging server): (localhost)"
 		read SSMYSQLSERVER
 		SSMYSQLSERVER=${SSMYSQLSERVER:-localhost}
 	fi
@@ -468,7 +475,7 @@ local:
 
 staging:
   vhost: "http://$FULLDOMAIN"
-  wordpress_path: "/var/www/$FULLDOMAIN" # use an absolute path here
+  wordpress_path: "$SSWEBDIR/$FULLDOMAIN" # use an absolute path here
 
   database:
     name: "$NEWDB"
@@ -522,7 +529,7 @@ EOT
 	#
 	#Requires virtualhost setup on staging server also needs apache
 	#
-	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data /var/www/$FULLDOMAIN ; sudo chmod -R g+w /var/www/$FULLDOMAIN ; sudo rm /var/www/$FULLDOMAIN/phpinfo.php "
+	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php "
 
   e_warning "Create Staging wp-config.php"
   cp -n ./wp-config-sample.php ./wp-config-staging.php
@@ -537,7 +544,7 @@ EOT
   sed -i '' -e "s/${DBPASS}/${SSMYSQLPWD}/g" wp-config-staging.php
   sed -i '' -e "s/${DBNAME}/${NEWDB}/g" wp-config-staging.php
   sed -i '' -e "s/${DBSERVER}/${SSMYSQLSERVER}/g" wp-config-staging.php
-  rsync -og --chown=www-data:www-data --no-perms --chmod=ugo=rwX wp-config-staging.php $SSSSHUSER@$SSSSH:/var/www/$FULLDOMAIN/wp-config.php
+  rsync -og --chown=www-data:www-data --no-perms --chmod=ugo=rwX wp-config-staging.php $SSSSHUSER@$SSSSH:$SSWEBDIR/$FULLDOMAIN/wp-config.php
   rm wp-config-staging.php
 fi
 
