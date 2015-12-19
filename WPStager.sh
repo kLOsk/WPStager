@@ -283,6 +283,9 @@ then
 else
     e_error "Apache not configured for dynamic vhosts"
     e_note "Fixing Apache to support dynamic vhosts"
+    mv /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf.bak
+    touch /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
+    echo "NameVirtualHost *:80" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
     echo $'\n' >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
     echo "#Dynamic Vhost" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
     echo "<VirtualHost *:80>" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
