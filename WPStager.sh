@@ -255,7 +255,8 @@ else
     e_note "Fixing Apache to listen on port 80"
     gsed -i.bak '/Listen 8888/i Listen 80' /Applications/MAMP/conf/apache/httpd.conf
     if [ $? -eq 0 ]; then
-      e_success "Apache configured to listen on port 80. Please restart MAMP now"
+      e_success "Apache configured to listen on port 80"
+      SERVERRESTART="1"
     else
       e_error "Something went wrong when changing the Apache configuration"
       exit 1
@@ -268,7 +269,8 @@ then
   e_note "Fixing Apache to include vhosts"
   gsed -i.bak '/httpd-vhosts\.conf/s/^#//g' /Applications/MAMP/conf/apache/httpd.conf
   if [ $? -eq 0 ]; then
-    e_success "Apache configured to include dynamic vhosts. Please restart MAMP now"
+    e_success "Apache configured to include dynamic vhosts"
+    SERVERRESTART="1"
   else
     e_error "Something went wrong when changing the Apache configuration"
     exit 1
@@ -293,11 +295,19 @@ else
     echo "    VirtualDocumentRoot /Applications/MAMP/htdocs/%0" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
     echo "</VirtualHost>" >> /Applications/MAMP/conf/apache/extra/httpd-vhosts.conf
     if [ $? -eq 0 ]; then
-      e_success "Apache configured for dynamic vhosts"
+      e_success "Apache configured for dynamic vhosts."
+      SERVERRESTART="1"
     else
       e_error "Something went wrong when changing the Apache configuration"
       exit 1
     fi
+fi
+
+if [ "$SERVERRESTART" = "1" ]; then
+  e_warning "Apache configuration was changed. Restarting Apache now"
+  sudo /Applications/MAMP/Library/bin/apachectl stop
+  sleep 10
+  sudo /Applications/MAMP/Library/bin/apachectl start
 fi
 
 #
@@ -361,7 +371,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 			read CFEMAIL
 		fi
 		if [ "$CFSECRET" = "change_me" ]; then
-			printf "CloudFlare Api Key:"
+			printf "CloudFlare Api Key: "
 			read CFSECRET
 		fi
 		if [ "$CFDOMAIN" = "change_me" ]; then
@@ -373,7 +383,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 			read CFSERVER
 		fi
 
-		printf "What's your staging domain (%s.%s)? " "${LOCALDOMAIN%%.*}" "$CFDOMAIN"
+		printf "What's your staging domain? (%s.%s)" "${LOCALDOMAIN%%.*}" "$CFDOMAIN"
 		read FULLDOMAIN
 		FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
 		SUBDOMAIN=${FULLDOMAIN%%.*}
@@ -395,7 +405,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	fi
 
   if [ "$SSWEBDIR" = "change_me" ]; then
-		printf "\nWhere is the web root directory of your staging server? : (/var/www)"
+		printf "\nWhere is the web root directory of your staging server? (/var/www)"
 		read SSWEBDIR
 		SSWEBDIR=${SSWEBDIR:-/var/www}
 	fi
@@ -407,7 +417,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	fi
 
 	if [ "$SSMYSQLUSER" = "change_me" ]; then
-		printf "Staging Server MySQL User: (root) "
+		printf "Staging Server MySQL User: (root)"
 		read SSMYSQLUSER
 		SSMYSQLUSER=${SSMYSQLUSER:-root}
 	fi
@@ -429,7 +439,8 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 	fi
 
 	if [ "$SSSSHUSER" = "change_me" ]; then
-    e_warning "SSH user root is required for proper Apache permissions. Permissions need to be fixed manually when not using root :-/"
+    e_warning "SSH user root is required for proper Apache permissions."
+    e_warning "Permissions need to be fixed manually when not using root :-/"
 		printf "Staging Server SSH user: (root)"
 		read SSSSHUSER
     SSSSHUSER=${SSSSHUSER:-root}
@@ -569,13 +580,18 @@ else
 fi
 
 if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
-  e_underline "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
-  e_underline "After that you can invoke your first Staging sync! To do so use the following commands from the command line:"
+  clear
+  e_bold "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
+  echo
+  e_bold "After that you can invoke your first Staging sync! To do so use the following commands from the command line:"
   e_warning "cd /Applications/MAMP/htdocs/$LOCALDOMAIN"
   e_warning "wordmove push --all -e staging"
-  e_underline "After that you can access your new staging site at http://$FULLDOMAIN"
+  e_bold "Your new staging site can be accessed at http://$FULLDOMAIN after the first sync."
+  e_underline "Keep in mind that you need to manually change your DNS server setting when not using the CloudFlare feature!"
+  echo
   e_note "For more information on how to use Wordmove make sure to visit https://github.com/welaika/wordmove"
 else
+  clear
   e_success "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
 fi
 #
