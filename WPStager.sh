@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 #
-# Requirements to run WPStager (https://github.com/kLOsk/WPStager):
-## MAMP for Mac (Free Version) https://www.mamp.info/ (autocheck if installed)
-## (included in tool now) MAMP Local Domain Mod http://blainsmith.com/articles/quick-and-dirty-local-domain-names-for-mamp/
-## (not needed anymore) Custom OSX Group of www-data
-## CloudFlare DNS (Free Version) www.cloudflare.com
-## WordMove https://github.com/welaika/wordmove (auto sudo install)
-## Public SSH Keys (https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2)
-## Apache WebServer with MySQL on Staging Server
-## Virtualhost Script on Staging Server https://github.com/RoverWire/virtualhost
-## LiveReload Desktop Server http://download.livereload.com/LiveReload-2.3.71.zip
-## LiveReload Browser Extension http://livereload.com/extensions/
+################################################################################
+##          WPStager - WordPress Provisioning and Staging Simplified          ##
+################################################################################
 #
-## SpeedUp Config
+#                     https://github.com/kLOsk/WPStager
+#                       http://www.daniel-klose.com
+#                          Made in Japan with <3
+#  Licensed under GPL2 (https://github.com/kLOsk/WPStager/blob/master/LICENSE)
+#
+############################## SpeedUp Config ##################################
 ## Feel free to change these variables to speed up the provisioning process.
 ## It is perfectly fine to not change these, or just change the ones you feel like presetting.
 ## If a config is not preset the script will automatically query during its execution.
@@ -83,15 +80,6 @@ if [[ "${OSTYPE}" == $1* ]]; then
 fi
 return 1
 }
-
-## To Do
-## DONE Check if necessary tools are installed: command -v foo >/dev/null 2>&1 || { echo >&2 "I require foo but it's not installed.  Aborting."; exit 1; }
-## DONE Work around for www-data group (This requires rsync 3.1.1 from homebrew and root on the server to change the owner -> rsync_options: "-og --chown=www-data:www-data --no-perms --chmod=ugo=rwX" )
-## DONE SSH Public Keys autoconfig
-## DONE Install virtual host on remote server
-## Support for nginx
-## consider creating auto config for pro version
-
 
 clear
 
@@ -164,6 +152,7 @@ else
   exit 1
 fi
 
+# Add MAMP MySQL bins to PATH
 if type_exists 'mysql'; then
   e_success "mysql bin detected"
 else
@@ -247,6 +236,7 @@ else
     exit
 fi
 
+## Fix Apache config for automatic pretty domains http://xxxx.dev
 if grep -Fxq "Listen 80" /Applications/MAMP/conf/apache/httpd.conf
 then
     e_success "Apache listening on port 80"
@@ -347,17 +337,12 @@ echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';
 
 cd "$LOCALDOMAIN"
 
+## Big Staging Block
+
 printf "Do you want to use an online Staging Environment? (y/N)"
 read STAGING
 STAGING=${STAGING:-n}
 if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
-
-	#echo "Adjust Group Ownership and Rights for Staging Environment"
-	#
-	#Require local setup of www-data group - see if it can be done without!
-	#
-	#chgrp -R www-data "$LOCALDOMAIN"
-	#chmod -R g+w "$LOCALDOMAIN"
 
 	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
 	read CF
@@ -404,6 +389,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 			read FULLDOMAIN
 	fi
 
+  # Requesting Apache webdir. Would be great to automate this!
   if [ "$SSWEBDIR" = "change_me" ]; then
 		printf "\nWhere is the web root directory of your staging server? (/var/www)"
 		read SSWEBDIR
@@ -473,9 +459,9 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
   fi
 
 	e_warning "Setup Wordmove for local and staging environment"
-	#
-	#Requires the use of wordmove
-	#
+
+	# Create the Movefile for Wordmove
+
 	touch Movefile
 	cat <<EOT >> Movefile
 local:
@@ -540,12 +526,11 @@ staging:
 #   [...]
 EOT
 
+  #Virtualhost creation for Apache on staging server
 	e_warning "Create Remote Database and setup Virtual Hosts"
-	#
-	#Requires virtualhost setup on staging server also needs apache
-	#
 	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php "
 
+  #Create staging wp-config.php as Wordmove doesn't sync wp-config.php
   e_warning "Create Staging wp-config.php"
   cp -n ./wp-config-sample.php ./wp-config-staging.php
   SECRETKEYS=$(curl -L https://api.wordpress.org/secret-key/1.1/salt/)
@@ -563,6 +548,7 @@ EOT
   rm wp-config-staging.php
 fi
 
+# Create the local wp-config.php in case it doesn't exist yet (which it never should)
 if [ -f ./wp-config.php ]; then
 	open http://"$LOCALDOMAIN"/wp-admin/install.php
 else
@@ -595,6 +581,6 @@ else
   e_success "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
 fi
 #
-# uses livereload desktop app
+# Livereload app seems to have bugs. Can't get it started from bash...
 #
 # open "livereload:add?path=/Applications/MAMP/htdocs/$LOCALDOMAIN/wp-content"

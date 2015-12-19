@@ -70,14 +70,6 @@ Simply follow the local installation and then move the script
 $ sudo mv wpstager /usr/local/bin/wpstager
 ```
 
-#### Additional Requirements
-
-The script expects that the staging server is running a LAMP stack. NGINX is currently not supported. It is required to have root access to the staging server, to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
-
-Please note that in order to use CloudFlare's DNS API, it is required to have an account with them and that your staging domain is pointing to your staging server. Have a look at this tutorial on [How to setup CloudFlare CDN](http://blog.daniel-klose.com/wordpress/setup-free-cloudflare-cdn-wordpress/). You will also require a [CloudFlare API key](https://support.cloudflare.com/hc/en-us/articles/200167836-Where-do-I-find-my-CloudFlare-API-key-) so the script can modify your DNS records!
-
-Make yourself comfortable with [Wordmove](https://github.com/welaika/wordmove) as this will be your main tool for syncing the local dev environment and the staging server.
-
 ## Usage
 
 ### Local Installation
@@ -91,3 +83,27 @@ $ ./wpstager
 ```bash
 $ wpstager
 ```
+
+
+## Additional Requirements
+
+The script expects that the staging server is running a LAMP stack. NGINX is currently not supported. It is required to have root access to the staging server, to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
+
+Please note that in order to use CloudFlare's DNS API, it is required to have an account with them and that your staging domain is pointing to your staging server. Have a look at this tutorial on [How to setup CloudFlare CDN](http://blog.daniel-klose.com/wordpress/setup-free-cloudflare-cdn-wordpress/). You will also require a [CloudFlare API key](https://support.cloudflare.com/hc/en-us/articles/200167836-Where-do-I-find-my-CloudFlare-API-key-) so the script can modify your DNS records!
+
+Make yourself comfortable with [Wordmove](https://github.com/welaika/wordmove) as this will be your main tool for syncing the local dev environment and the staging server.
+
+
+## To Do
+
+- Support for NGINX
+- Auto config and options
+
+## Credits
+
+- Homebrew [http://brew.sh/](http://brew.sh/)
+- MAMP [https://www.mamp.info/](https://www.mamp.info/)
+- [Wordmove](https://github.com/welaika/wordmove)
+- CloudFlare CDN [https://www.cloudflare.com/](https://www.cloudflare.com/)
+- [virtualhost](https://github.com/RoverWire/virtualhost)
+- [Nate Landau](http://natelandau.com/bash-scripting-utilities/)
