@@ -38,9 +38,13 @@ But it doesn't stop there. A thing I always hated, was the setup of a WordPress 
 
 ## Version
 
-1.0.0
+1.0.1
 
 ### Changelog
+
+#### 1.0.1
+
+* Small fixes
 
 #### 1.0.0
 
@@ -54,7 +58,7 @@ But it doesn't stop there. A thing I always hated, was the setup of a WordPress 
 
 ```bash
 $ cd ~
-$ wget -O wpstager https://raw.githubusercontent.com/kLOsk/WPStager/master/WPStager.sh
+$ curl -o wpstager https://raw.githubusercontent.com/kLOsk/WPStager/master/WPStager.sh
 $ chmod +x wpstager
 ```
 
@@ -68,7 +72,7 @@ $ sudo mv wpstager /usr/local/bin/wpstager
 
 #### Additional Requirements
 
-The script expects that the staging server is running a LAMP stack. NGINX is currently not supported. It is required to have root access to the staging server to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
+The script expects that the staging server is running a LAMP stack. NGINX is currently not supported. It is required to have root access to the staging server, to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
 
 Please note that in order to use CloudFlare's DNS API, it is required to have an account with them and that your staging domain is pointing to your staging server. Have a look at this tutorial on [How to setup CloudFlare CDN](http://blog.daniel-klose.com/wordpress/setup-free-cloudflare-cdn-wordpress/). You will also require a [CloudFlare API key](https://support.cloudflare.com/hc/en-us/articles/200167836-Where-do-I-find-my-CloudFlare-API-key-) so the script can modify your DNS records!
 

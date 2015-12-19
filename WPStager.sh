@@ -120,7 +120,7 @@ if [ $? -eq 0 ]; then
   e_success "Xcode Command Line Tools installed"
 else
   e_error "Xcode Command Line Tools not installed"
-  e_warning "Installing now..."
+  e_warning "Installing now... (This might take a while)"
   # https://github.com/timsutton/osx-vm-templates/blob/ce8df8a7468faa7c5312444ece1b977c1b2f77a4/scripts/xcode-cli-tools.sh
   touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress;
   PROD=$(softwareupdate -l |
@@ -155,6 +155,7 @@ else
 fi
 
 e_warning "Installing rsync and gnu-sed since OSX ships with outdated versions"
+brew tap homebrew/dupes &>
 brew install rsync gnu-sed &> /dev/null
 if [ $? -eq 0 ]; then
   e_success "rsync and gnu-sed successfully updated"
