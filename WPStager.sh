@@ -155,7 +155,7 @@ else
 fi
 
 e_warning "Installing rsync and gnu-sed since OSX ships with outdated versions"
-brew tap homebrew/dupes &>
+brew tap homebrew/dupes &> /dev/null
 brew install rsync gnu-sed &> /dev/null
 if [ $? -eq 0 ]; then
   e_success "rsync and gnu-sed successfully updated"
