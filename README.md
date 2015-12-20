@@ -84,14 +84,41 @@ $ ./wpstager
 $ wpstager
 ```
 
+## What does the script do?
 
-## Additional Requirements
+The script has two main features:
 
-The script expects that the staging server is running a LAMP stack. NGINX is currently not supported. It is required to have root access to the staging server, to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
+1. Setup a local WordPress Installation with a pretty http://xxxx.dev local domain
+2. Generate an identical Staging copy on a remote server including CloudFlare DNS adjustment and Apache vhost configuration
 
-Please note that in order to use CloudFlare's DNS API, it is required to have an account with them and that your staging domain is pointing to your staging server. Have a look at this tutorial on [How to setup CloudFlare CDN](http://blog.daniel-klose.com/wordpress/setup-free-cloudflare-cdn-wordpress/). You will also require a [CloudFlare API key](https://support.cloudflare.com/hc/en-us/articles/200167836-Where-do-I-find-my-CloudFlare-API-key-) so the script can modify your DNS records!
+Basically you run one command, answer a few questions and have a local Wordpress installation as well as an identical staging server copy with full push/pull deployment capabilities.
 
-Make yourself comfortable with [Wordmove](https://github.com/welaika/wordmove) as this will be your main tool for syncing the local dev environment and the staging server.
+### How to use the local WordPress Installation Feature
+
+It is perfectly fine to not use the Staging Server function and only use the tool to install WordPress locally.
+
+The script will install all it's dependencies automatically and only requires the use of a Mac and the installation of the MAMP webserver to begin with.
+
+It will automatically configure MAMP to work like a "real" webserver so the WordPress installation can be accessed via http://yourwpdevdomain.dev.
+
+It will then download the latest WordPress version from WordPress.org, setup the MySQL database and generate the wp-config.php file. Once this is finished the browser will open and you will be presented with a new vanilla WordPress installation.
+
+
+### How to use the Staging Server Feature
+
+The script expects that the (remote) staging server is running a LAMP stack. NGINX is currently not supported.
+
+It is required to have root access to the staging server via SSH, to set the file ownership (www-data), as well as file permissions for WordPress to function properly.
+
+The script makes use of a tool called virtualhost to adjust Apache's vhost and add the newly created site to point to the installation folder. The installation folder can be set manually but it is recommended to use either /var/www or /var/www/html as per Apache's 2.2/2.4 spec.
+
+The script can optionally use CloudFlare to setup the DNS redirection to a nely created subdomain (think http://staging.yourdomain.com)
+
+Please note that in order to use CloudFlare's DNS API, it is required to have a (free) account with them and that your staging domain is pointing to your staging server. Have a look at this tutorial on [How to setup CloudFlare CDN](http://blog.daniel-klose.com/wordpress/setup-free-cloudflare-cdn-wordpress/). You will also require a [CloudFlare API key](https://support.cloudflare.com/hc/en-us/articles/200167836-Where-do-I-find-my-CloudFlare-API-key-) so the script can modify your DNS records! The script will ask you for these credentials during installation, or you can preset them manually by editing the script.
+
+After the script is finished, it is important to first finish the local WP installation, by setting up an admin user in the browser. After that run Wordmove to sync the local installation with your staging server. You can then log into your staging WordPress installation with the same credentials as your local installation.
+
+Make yourself comfortable with [Wordmove](https://github.com/welaika/wordmove) as this will be your main tool for syncing the local dev environment and the staging server afterwards.
 
 
 ## To Do
