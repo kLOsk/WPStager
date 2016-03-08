@@ -333,7 +333,7 @@ fi
 printf "What would you like to name your new database? (%s)" "${LOCALDOMAIN%%.*}"
 read NEWDB
 NEWDB=${NEWDB:-${LOCALDOMAIN%%.*}}
-echo "CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u"$MYSQLUSER" -p"$MYSQLPWD"
+echo "CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO '$MYSQLUSER'@'localhost';" | /Applications/MAMP/Library/bin/mysql -u"$MYSQLUSER" -p"$MYSQLPWD"
 
 cd "$LOCALDOMAIN"
 
@@ -528,7 +528,7 @@ EOT
 
   #Virtualhost creation for Apache on staging server
 	e_warning "Create Remote Database and setup Virtual Hosts"
-	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE $NEWDB; GRANT ALL ON $NEWDB.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php "
+	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php "
 
   #Create staging wp-config.php as Wordmove doesn't sync wp-config.php
   e_warning "Create Staging wp-config.php"
