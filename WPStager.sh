@@ -93,6 +93,16 @@ else
   exit 1
 fi
 
+## Check if config file exists
+if [ -f "$HOME/.wpstager.cfg" ]
+then
+    e_success "WPStager configuration file found."
+    e_warning "Reading configuration..."
+    source $HOME/.wpstager.cfg
+else
+    e_error "WPStager configuration file not found."
+fi
+
 if [ -d "/Applications/MAMP/MAMP.app" ]
 then
     e_success "MAMP installed at /Applications/MAMP/"
@@ -528,7 +538,7 @@ EOT
 
   #Virtualhost creation for Apache on staging server
 	e_warning "Create Remote Database and setup Virtual Hosts"
-	ssh -t $SSSSHUSER@$SSSSH "echo \"CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO '$SSMYSQLUSER'@'$SSMYSQLSERVER';\" | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php "
+	ssh -t $SSSSHUSER@$SSSSH "echo 'CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO $SSMYSQLUSER@$SSMYSQLSERVER;' | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php ; "
 
   #Create staging wp-config.php as Wordmove doesn't sync wp-config.php
   e_warning "Create Staging wp-config.php"

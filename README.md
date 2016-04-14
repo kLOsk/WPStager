@@ -38,9 +38,14 @@ But it doesn't stop there. A thing I always hated, was the setup of a WordPress 
 
 ## Version
 
-1.0.1
+1.0.2
 
 ### Changelog
+
+#### 1.0.2
+
+* Fixed remote creation of databases, that contain hyphens in their name
+* Added support for future remote configuration files
 
 #### 1.0.1
 
