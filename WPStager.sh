@@ -474,6 +474,9 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 
 	touch Movefile
 	cat <<EOT >> Movefile
+global:
+  sql_adapter: "default"
+
 local:
   vhost: "http://$LOCALDOMAIN"
   wordpress_path: "/Applications/MAMP/htdocs/$LOCALDOMAIN" # use an absolute path here
