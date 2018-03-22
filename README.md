@@ -5,7 +5,7 @@ WPStager
 
 WordPress Provisioning and Staging Simplified
 
-What does this do? This script automates the task of creating a local as well as a staging WordPress installation requiring only [MAMP](https://www.mamp.info/). It's packed with nifty little features, like for example automatic configuration of MAMP to listen on port 80 and setting MAMP's config to use pretty domain names like http://testinstall.dev. It automatically downloads the latest version of WordPress and installs it into your MAMP htdocs folder. It even creates the wp-config.php file for you, so you don't have to. It's a true 1-minute install.
+What does this do? This script automates the task of creating a local, as well as a staging WordPress installation requiring only [MAMP](https://www.mamp.info/). It can also pull an existing WordPress installation onto your local dev environment. It's packed with nifty little features, like for example automatic configuration of MAMP to listen on port 80 and setting MAMP's config to use pretty domain names like http://testinstall.test. It automatically downloads the latest version of WordPress and installs it into your MAMP htdocs folder. It even creates the wp-config.php file for you, so you don't have to. It's a true 1-minute install.
 
 But it doesn't stop there. A thing I always hated, was the setup of a WordPress staging installation on my webserver. Fiddling around with Apache's vhosts, changing DNS records to use subdomains and creating the MySQL database. By utilizing [CloudFlare](https://www.cloudflare.com/)'s DNS API and with the use of [Wordmove](https://github.com/welaika/wordmove), the staging provisioning process is now invoked through a single command.
 
@@ -15,6 +15,7 @@ But it doesn't stop there. A thing I always hated, was the setup of a WordPress 
 
 ## Features
 
+- NEW: Ability to pull in existing WordPress installations from a production server!
 - Uncomplicated Bash script
 - Stupidly easy to use
 - Uses MAMP so you don't have to mess around with VM's
@@ -38,9 +39,14 @@ But it doesn't stop there. A thing I always hated, was the setup of a WordPress 
 
 ## Version
 
-1.0.2
+1.1.0
 
 ### Changelog
+
+#### 1.1.0
+
+* NEW FEATURE: You can now pull in production server sites into your local dev environment. WPStager will configure the Movefile for you!
+* Fix: Changed .dev to .test recommendation for local dev environment domain
 
 #### 1.0.2
 

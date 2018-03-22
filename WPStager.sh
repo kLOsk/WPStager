@@ -135,9 +135,9 @@ if type_exists 'brew'; then
 else
   e_error "Homebrew has not been installed yet."
   printf "Do you want WPStager to install Homebrew for you (http://brew.sh/)? (Y/n)"
-	read HB
-	HB=${HB:-y}
-	if [ "$HB" = "y" ] || [ "$HB" = "Y" ]; then
+  read HB
+  HB=${HB:-y}
+  if [ "$HB" = "y" ] || [ "$HB" = "Y" ]; then
     e_warning "Installing Homebrew..."
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     if [ $? -eq 0 ]; then
@@ -191,9 +191,9 @@ else
   e_error "Wordmove has not been installed yet."
   e_note "WPStager can install Wordmove for you (globally with sudo). If you want your Ruby Gems to be installed locally only, please install Wordmove manually (https://github.com/welaika/wordmove)"
   printf "Install Wordmove globally? (Y/n)"
-	read WM
-	WM=${WM:-y}
-	if [ "$WM" = "y" ] || [ "$WM" = "Y" ]; then
+  read WM
+  WM=${WM:-y}
+  if [ "$WM" = "y" ] || [ "$WM" = "Y" ]; then
     e_warning "Installing Wordmove..."
     sudo gem install wordmove
     if [ $? -eq 0 ]; then
@@ -314,7 +314,7 @@ fi
 ## Switch to MAMP htdocs directory
 #
 cd /Applications/MAMP/htdocs
-printf "What would you like to name your new WordPress development domain (i.e. devsite.dev)? "
+printf "What would you like to name your new WordPress development domain (i.e. devsite.test)? "
 read LOCALDOMAIN
 
 #
@@ -329,15 +329,15 @@ mv wordpress "$LOCALDOMAIN"
 rm latest.tar.gz
 
 if [ "$MYSQLUSER" = "change_me" ]; then
-	printf "\nLocal MySQL User: (root)"
-	read MYSQLUSER
-	MYSQLUSER=${MYSQLUSER:-root}
+  printf "\nLocal MySQL User: (root)"
+  read MYSQLUSER
+  MYSQLUSER=${MYSQLUSER:-root}
 fi
 
 if [ "$MYSQLPWD" = "change_me" ]; then
-	printf "Local MySQL Password: (root)"
-	read MYSQLPWD
-	MYSQLPWD=${MYSQLPWD:-root}
+  printf "Local MySQL Password: (root)"
+  read MYSQLPWD
+  MYSQLPWD=${MYSQLPWD:-root}
 fi
 
 printf "What would you like to name your new database? (%s)" "${LOCALDOMAIN%%.*}"
@@ -347,6 +347,27 @@ echo "CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO '$MYSQLUSER'@'loc
 
 cd "$LOCALDOMAIN"
 
+e_warning "Setup Wordmove for local environment"
+
+# Create the Movefile for Wordmove
+
+touch Movefile
+cat <<EOT >> Movefile
+global:
+  sql_adapter: "default"
+
+local:
+  vhost: "http://$LOCALDOMAIN"
+  wordpress_path: "/Applications/MAMP/htdocs/$LOCALDOMAIN" # use an absolute path here
+
+  database:
+    name: "$NEWDB"
+    user: "$MYSQLUSER"
+    password: "$MYSQLPWD"
+    host: "localhost"
+
+EOT
+
 ## Big Staging Block
 
 printf "Do you want to use an online Staging Environment? (y/N)"
@@ -354,93 +375,93 @@ read STAGING
 STAGING=${STAGING:-n}
 if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 
-	printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
-	read CF
-	CF=${CF:-y}
-	if [ "$CF" = "y" ] || [ "$CF" = "Y" ]; then
-		#
-		#Require a cloudflare account
-		#
-		if [ "$CFEMAIL" = "change_me" ]; then
-			printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com): "
-			read CFEMAIL
-		fi
-		if [ "$CFSECRET" = "change_me" ]; then
-			printf "CloudFlare Api Key: "
-			read CFSECRET
-		fi
-		if [ "$CFDOMAIN" = "change_me" ]; then
-			printf "CloudFlare administrated Staging Domain (i.e. WPStager.com): "
-			read CFDOMAIN
-		fi
-		if [ "$CFSERVER" = "change_me" ]; then
-			printf "The IP address CloudFlare will route the new subdomain to (i.e. 34.23.1.34): "
-			read CFSERVER
-		fi
+  printf "Do you want to use CloudFlare DNS for automatic subdomain provisioning? (Y/n)"
+  read CF
+  CF=${CF:-y}
+  if [ "$CF" = "y" ] || [ "$CF" = "Y" ]; then
+    #
+    #Require a cloudflare account
+    #
+    if [ "$CFEMAIL" = "change_me" ]; then
+      printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com): "
+      read CFEMAIL
+    fi
+    if [ "$CFSECRET" = "change_me" ]; then
+      printf "CloudFlare Api Key: "
+      read CFSECRET
+    fi
+    if [ "$CFDOMAIN" = "change_me" ]; then
+      printf "CloudFlare administrated Staging Domain (i.e. WPStager.com): "
+      read CFDOMAIN
+    fi
+    if [ "$CFSERVER" = "change_me" ]; then
+      printf "The IP address CloudFlare will route the new subdomain to (i.e. 34.23.1.34): "
+      read CFSERVER
+    fi
 
-		printf "What's your staging domain? (%s.%s)" "${LOCALDOMAIN%%.*}" "$CFDOMAIN"
-		read FULLDOMAIN
-		FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
-		SUBDOMAIN=${FULLDOMAIN%%.*}
+    printf "What's your staging domain? (%s.%s)" "${LOCALDOMAIN%%.*}" "$CFDOMAIN"
+    read FULLDOMAIN
+    FULLDOMAIN=${FULLDOMAIN:-${LOCALDOMAIN%%.*}.$CFDOMAIN}
+    SUBDOMAIN=${FULLDOMAIN%%.*}
 
-		e_warning "Generating DNS Entry with Cloudflare"
-		curl https://www.cloudflare.com/api_json.html \
-		-d "a=rec_new" \
-		-d "tkn=$CFSECRET" \
-		-d "email=$CFEMAIL" \
-		-d "z=$CFDOMAIN" \
-		-d "type=A" \
-		-d "name=$SUBDOMAIN" \
-		-d "content=$CFSERVER" \
-		-d "service_mode=1" \
-		-d "ttl=1"
-	else
-			printf "What's your staging subdomain (i.e. clientsite.WPStager.com)? "
-			read FULLDOMAIN
-	fi
+    e_warning "Generating DNS Entry with Cloudflare"
+    curl https://www.cloudflare.com/api_json.html \
+    -d "a=rec_new" \
+    -d "tkn=$CFSECRET" \
+    -d "email=$CFEMAIL" \
+    -d "z=$CFDOMAIN" \
+    -d "type=A" \
+    -d "name=$SUBDOMAIN" \
+    -d "content=$CFSERVER" \
+    -d "service_mode=1" \
+    -d "ttl=1"
+  else
+      printf "What's your staging subdomain (i.e. clientsite.WPStager.com)? "
+      read FULLDOMAIN
+  fi
 
   # Requesting Apache webdir. Would be great to automate this!
   if [ "$SSWEBDIR" = "change_me" ]; then
-		printf "\nWhere is the web root directory of your staging server? (/var/www)"
-		read SSWEBDIR
-		SSWEBDIR=${SSWEBDIR:-/var/www}
-	fi
+    printf "\nWhere is the web root directory of your staging server? (/var/www)"
+    read SSWEBDIR
+    SSWEBDIR=${SSWEBDIR:-/var/www}
+  fi
 
   if [ "$SSMYSQLSERVER" = "change_me" ]; then
-		printf "Staging Server MySQL Host Address (Hit enter if MySQL server runs locally on the staging server): (localhost)"
-		read SSMYSQLSERVER
-		SSMYSQLSERVER=${SSMYSQLSERVER:-localhost}
-	fi
+    printf "Staging Server MySQL Host Address (Hit enter if MySQL server runs locally on the staging server): (localhost)"
+    read SSMYSQLSERVER
+    SSMYSQLSERVER=${SSMYSQLSERVER:-localhost}
+  fi
 
-	if [ "$SSMYSQLUSER" = "change_me" ]; then
-		printf "Staging Server MySQL User: (root)"
-		read SSMYSQLUSER
-		SSMYSQLUSER=${SSMYSQLUSER:-root}
-	fi
+  if [ "$SSMYSQLUSER" = "change_me" ]; then
+    printf "Staging Server MySQL User: (root)"
+    read SSMYSQLUSER
+    SSMYSQLUSER=${SSMYSQLUSER:-root}
+  fi
 
-	if [ "$SSMYSQLPWD" = "change_me" ]; then
-		printf "Staging Server MySQL Password: "
-		read SSMYSQLPWD
-	fi
+  if [ "$SSMYSQLPWD" = "change_me" ]; then
+    printf "Staging Server MySQL Password: "
+    read SSMYSQLPWD
+  fi
 
-	if [ "$SSSSH" = "change_me" ]; then
+  if [ "$SSSSH" = "change_me" ]; then
     if [ "$CFSERVER" = "change_me" ]; then
-  		printf "Staging Server SSH Host/IP Address (i.e. 1.2.3.4): "
-  		read SSSSH
+      printf "Staging Server SSH Host/IP Address (i.e. 1.2.3.4): "
+      read SSSSH
     else
       printf "Staging Server SSH Host Address: (%s)" "$CFSERVER" #Needs fix as %s is change_me with default config and no cloudflare use
       read SSSSH
       SSSSH=${SSSSH:-$CFSERVER}
     fi
-	fi
+  fi
 
-	if [ "$SSSSHUSER" = "change_me" ]; then
+  if [ "$SSSSHUSER" = "change_me" ]; then
     e_warning "SSH user root is required for proper Apache permissions."
     e_warning "Permissions need to be fixed manually when not using root :-/"
-		printf "Staging Server SSH user: (root)"
-		read SSSSHUSER
+    printf "Staging Server SSH user: (root)"
+    read SSSSHUSER
     SSSSHUSER=${SSSSHUSER:-root}
-	fi
+  fi
 
   ## Setup Public Keys
   ## Check if local ssh keys exist
@@ -468,25 +489,11 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
       ssh -t $SSSSHUSER@$SSSSH "cd /usr/local/bin ; wget -O virtualhost https://raw.githubusercontent.com/RoverWire/virtualhost/master/virtualhost.sh ; chmod +x virtualhost ;"
   fi
 
-	e_warning "Setup Wordmove for local and staging environment"
+  e_warning "Setup Wordmove for staging environment"
 
-	# Create the Movefile for Wordmove
+  # Append Movefile with staging block
 
-	touch Movefile
-	cat <<EOT >> Movefile
-global:
-  sql_adapter: "default"
-
-local:
-  vhost: "http://$LOCALDOMAIN"
-  wordpress_path: "/Applications/MAMP/htdocs/$LOCALDOMAIN" # use an absolute path here
-
-  database:
-    name: "$NEWDB"
-    user: "$MYSQLUSER"
-    password: "$MYSQLPWD"
-    host: "localhost"
-
+  cat <<EOT >> Movefile
 staging:
   vhost: "http://$FULLDOMAIN"
   wordpress_path: "$SSWEBDIR/$FULLDOMAIN" # use an absolute path here
@@ -540,8 +547,8 @@ staging:
 EOT
 
   #Virtualhost creation for Apache on staging server
-	e_warning "Create Remote Database and setup Virtual Hosts"
-	ssh -t $SSSSHUSER@$SSSSH "echo 'CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO $SSMYSQLUSER@$SSMYSQLSERVER;' | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php ; "
+  e_warning "Create Remote Database and setup Virtual Hosts"
+  ssh -t $SSSSHUSER@$SSSSH "echo 'CREATE DATABASE \`$NEWDB\`; GRANT ALL ON \`$NEWDB\`.* TO $SSMYSQLUSER@$SSMYSQLSERVER;' | /usr/bin/mysql -u$SSMYSQLUSER -p$SSMYSQLPWD ; sudo /usr/local/bin/virtualhost create $FULLDOMAIN $FULLDOMAIN ; sudo chown -R www-data:www-data $SSWEBDIR/$FULLDOMAIN ; sudo chmod -R g+w $SSWEBDIR/$FULLDOMAIN ; sudo rm $SSWEBDIR/$FULLDOMAIN/phpinfo.php ; "
 
   #Create staging wp-config.php as Wordmove doesn't sync wp-config.php
   e_warning "Create Staging wp-config.php"
@@ -561,37 +568,164 @@ EOT
   rm wp-config-staging.php
 fi
 
-# Create the local wp-config.php in case it doesn't exist yet (which it never should)
-if [ -f ./wp-config.php ]; then
-	open http://"$LOCALDOMAIN"/wp-admin/install.php
-else
-	cp -n ./wp-config-sample.php ./wp-config.php
-	SECRETKEYS=$(curl -L https://api.wordpress.org/secret-key/1.1/salt/)
-	EXISTINGKEYS='put your unique phrase here'
-	printf '%s\n' "g/$EXISTINGKEYS/d" a "$SECRETKEYS" . w | ed -s wp-config.php
-	DBUSER=$"username_here"
-	DBPASS=$"password_here"
-	DBNAME=$"database_name_here"
-	sed -i '' -e "s/${DBUSER}/${MYSQLUSER}/g" wp-config.php
-	sed -i '' -e "s/${DBPASS}/${MYSQLPWD}/g" wp-config.php
-	sed -i '' -e "s/${DBNAME}/${NEWDB}/g" wp-config.php
-	open http://"$LOCALDOMAIN"/wp-admin/install.php
+## Big Production Pull Block
+
+e_warning "Note: Public key SSH access must be enabled."
+e_warning "WPStager will try to generate them for you, but sometimes this does not work"
+printf "Do you want to pull data from a production server? (y/N)"
+read PRODUCTION
+PRODUCTION=${PRODUCTION:-n}
+if [ "$PRODUCTION" = "y" ] || [ "$PRODUCTION" = "Y" ]; then
+
+  e_warning "Make sure to include http:// OR https://"
+  printf "What's your production domain (i.e. https://WPStager.com)?"
+  read PFULLDOMAIN
+
+  printf "\nWhere is the root directory of your production server WordPress installation? (e.g. /var/www/sitename)"
+  read PSWEBDIR
+
+  printf "Production Server MySQL Host Address (Hit enter if MySQL server runs locally on the production server): (localhost)"
+  read PSMYSQLSERVER
+  PSMYSQLSERVER=${PSMYSQLSERVER:-localhost}
+
+  printf "Production Server MySQL Database Name: "
+  read PSMYSQLDB
+
+  printf "Production Server MySQL User: (root) "
+  read PSMYSQLUSER
+  PSMYSQLUSER=${PSMYSQLUSER:-root}
+
+  printf "Production Server MySQL Password: "
+  read PSMYSQLPWD
+
+  printf "Production Server MySQL Port: (3306) "
+  read PSMYSQLPORT
+  PSMYSQLPORT=${PSMYSQLPORT:-3306}
+
+  printf "Production Server SSH Host/IP Address (i.e. 1.2.3.4): "
+  read PSSSH
+
+  printf "Production Server SSH User: (root) "
+  read PSSSHUSER
+  PSSSHUSER=${PSSSHUSER:-root}
+
+  printf "Production Server SSH Port: (22) "
+  read PSSSHPORT
+  PSSSHPORT=${PSSSHPORT:-22}
+
+  ## Setup Public Keys
+  ## Check if local ssh keys exist
+  e_warning "Check if public SSH key exists"
+  if [ -f ~/.ssh/id_rsa.pub ]; then
+    e_success "Public SSH key exists"
+    ## If it exists check if its added on server. If not add it.
+    KEY=$(cat ~/.ssh/id_rsa.pub)
+    ssh -o StrictHostKeyChecking=no -l ${PSSSHUSER} ${PSSSH} "if [ -z \"\$(grep \"$KEY\" ~/.ssh/authorized_keys )\" ]; then echo $KEY >> ~/.ssh/authorized_keys; echo Public SSH key added to staging server; fi;"
+  else
+    ## If not create
+    e_error "Public SSH key doesn't exist. Generating now"
+    ssh-keygen -t rsa
+    ##Copy key to production server
+    cat ~/.ssh/id_rsa.pub | ssh -o StrictHostKeyChecking=no -l ${PSSSHUSER} ${PSSSH} "mkdir -p ~/.ssh && cat >>  ~/.ssh/authorized_keys"
+  fi
+
+  e_warning "Setup Wordmove for production environment"
+
+  # Append Movefile with production block
+
+  cat <<EOT >> Movefile
+production:
+  vhost: "$PFULLDOMAIN"
+  wordpress_path: "$PSWEBDIR" # use an absolute path here
+
+  database:
+    name: "$PSMYSQLDB"
+    user: "$PSMYSQLUSER"
+    password: "$PSMYSQLPWD"
+    host: "$PSMYSQLSERVER"
+    port: "$PSMYSQLPORT"
+
+  exclude:
+    - ".git/"
+    - ".gitignore"
+    - ".sass-cache/"
+    - "bin/"
+    - "tmp/*"
+    - "Gemfile*"
+    - "Movefile"
+    - ".DS_Store"
+    - "wp-config.php"
+    - "wp-content/*.sql"
+
+  # paths: # you can customize wordpress internal paths
+  #   wp_content: "wp-content"
+  #   uploads: "wp-content/uploads"
+  #   plugins: "wp-content/plugins"
+  #   themes: "wp-content/themes"
+  #   languages: "wp-content/languages"
+  #   themes: "wp-content/themes"
+
+  ssh:
+    host: "$PSSSH"
+    user: "$PSSSHUSER"
+  #   password: "password" # password is optional, will use public keys if available.
+    port: $PSSSHPORT # Port is optional
+  #   rsync_options: "-og --chown=www-data:www-data --no-perms --chmod=ugo=rwX"
+  #   gateway: # Gateway is optional
+  #     host: "host"
+  #     user: "user"
+  #     password: "password" # password is optional, will use public keys if available.
+
+  # ftp:
+  #   user: "user"
+  #   password: "password"
+  #   host: "host"
+  #   passive: true
+
+# production2: # multiple environments can be specified
+#   [...]
+EOT
+
 fi
 
-if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
+# Create the local wp-config.php in case it doesn't exist yet (which it never should)
+if [ -f ./wp-config.php ]; then
+  open http://"$LOCALDOMAIN"/wp-admin/install.php
+else
+  cp -n ./wp-config-sample.php ./wp-config.php
+  SECRETKEYS=$(curl -L https://api.wordpress.org/secret-key/1.1/salt/)
+  EXISTINGKEYS='put your unique phrase here'
+  printf '%s\n' "g/$EXISTINGKEYS/d" a "$SECRETKEYS" . w | ed -s wp-config.php
+  DBUSER=$"username_here"
+  DBPASS=$"password_here"
+  DBNAME=$"database_name_here"
+  sed -i '' -e "s/${DBUSER}/${MYSQLUSER}/g" wp-config.php
+  sed -i '' -e "s/${DBPASS}/${MYSQLPWD}/g" wp-config.php
+  sed -i '' -e "s/${DBNAME}/${NEWDB}/g" wp-config.php
+  open http://"$LOCALDOMAIN"/wp-admin/install.php
+fi
+
+if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ] || [ "$PRODUCTION" = "y" ] || [ "$PRODUCTION" = "Y" ]; then
   clear
   e_bold "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
   echo
-  e_bold "After that you can invoke your first Staging sync! To do so use the following commands from the command line:"
+  e_bold "After that you can invoke your first Staging, or Production sync! To do so use the following commands from the command line:"
+  echo
+  e_bold "For Staging"
   e_warning "cd /Applications/MAMP/htdocs/$LOCALDOMAIN"
   e_warning "wordmove push --all -e staging"
   e_bold "Your new staging site can be accessed at http://$FULLDOMAIN after the first sync."
   e_underline "Keep in mind that you need to manually change your DNS server setting when not using the CloudFlare feature!"
   echo
+  e_bold "For Production"
+  e_warning "wordmove pull --all -e production"
+  e_underline "This will make an exact copy of your production site in your local dev environment!"
+  echo
   e_note "For more information on how to use Wordmove make sure to visit https://github.com/welaika/wordmove"
 else
   clear
   e_success "All done! Now finish your local WordPress installation in the browser (http://$LOCALDOMAIN/wp-admin/install.php)!"
+  e_note "For more information on how to use Wordmove make sure to visit https://github.com/welaika/wordmove"
 fi
 #
 # Livereload app seems to have bugs. Can't get it started from bash...
