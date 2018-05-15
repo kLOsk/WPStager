@@ -15,6 +15,7 @@
 ## If a config is not preset the script will automatically query during its execution.
 MYSQLUSER="change_me" # Your MAMP MySQL user. Default "root"
 MYSQLPWD="change_me" # Your MAMP MySQL password. Default "root"
+CFAPI="change_me" # Your CloudFlare v4 Api Zone ID (eg: a34ea34aeaea424ae25352) https://api.cloudflare.com/#getting-started-resource-ids (Can be found in Domain Summary when selecting a domain in CloudFlare)
 CFSECRET="change_me" # Your CloudFlare Api key. Can be found here: https://www.cloudflare.com/a/account/my-account
 CFEMAIL="change_me" # Your CloudFlare e-mail account (e.g. howdy@wordpress.org)
 CFDOMAIN="change_me" # The second level domain which is managed by CloudFlare (e.g. stageserver.com)
@@ -351,8 +352,8 @@ e_warning "Setup Wordmove for local environment"
 
 # Create the Movefile for Wordmove
 
-touch Movefile
-cat <<EOT >> Movefile
+touch movefile.yml
+cat <<EOT >> movefile.yml
 global:
   sql_adapter: "default"
 
@@ -386,6 +387,10 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
       printf "CloudFlare E-Mail Account (i.e. daniel@wpstager.com): "
       read CFEMAIL
     fi
+    if [ "$CFAPI" = "change_me" ]; then
+      printf "CloudFlare Api Zone ID: "
+      read CFAPI
+    fi
     if [ "$CFSECRET" = "change_me" ]; then
       printf "CloudFlare Api Key: "
       read CFSECRET
@@ -405,16 +410,17 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
     SUBDOMAIN=${FULLDOMAIN%%.*}
 
     e_warning "Generating DNS Entry with Cloudflare"
-    curl https://www.cloudflare.com/api_json.html \
-    -d "a=rec_new" \
-    -d "tkn=$CFSECRET" \
-    -d "email=$CFEMAIL" \
-    -d "z=$CFDOMAIN" \
-    -d "type=A" \
-    -d "name=$SUBDOMAIN" \
-    -d "content=$CFSERVER" \
-    -d "service_mode=1" \
-    -d "ttl=1"
+    curl -X POST 'https://api.cloudflare.com/client/v4/zones/'$CFAPI'/dns_records' \
+    -H 'X-Auth-Email: '$CFEMAIL \
+    -H 'X-Auth-Key: '$CFSECRET \
+    -H 'Content-Type: application/json' \
+    --data '{
+      "type": "A",
+      "name": "'$SUBDOMAIN.$CFDOMAIN'",
+      "content": "'$CFSERVER'",
+      "service_mode": "1",
+      "ttl": "1"
+    }'
   else
       printf "What's your staging subdomain (i.e. clientsite.WPStager.com)? "
       read FULLDOMAIN
@@ -493,7 +499,7 @@ if [ "$STAGING" = "y" ] || [ "$STAGING" = "Y" ]; then
 
   # Append Movefile with staging block
 
-  cat <<EOT >> Movefile
+  cat <<EOT >> movefile.yml
 staging:
   vhost: "http://$FULLDOMAIN"
   wordpress_path: "$SSWEBDIR/$FULLDOMAIN" # use an absolute path here
@@ -513,6 +519,7 @@ staging:
     - "tmp/*"
     - "Gemfile*"
     - "Movefile"
+    - "movefile.yml"
     - ".DS_Store"
     - "wp-config.php"
     - "wp-content/*.sql"
@@ -633,7 +640,7 @@ if [ "$PRODUCTION" = "y" ] || [ "$PRODUCTION" = "Y" ]; then
 
   # Append Movefile with production block
 
-  cat <<EOT >> Movefile
+  cat <<EOT >> movefile.yml
 production:
   vhost: "$PFULLDOMAIN"
   wordpress_path: "$PSWEBDIR" # use an absolute path here
@@ -653,6 +660,7 @@ production:
     - "tmp/*"
     - "Gemfile*"
     - "Movefile"
+    - "movefile.yml"
     - ".DS_Store"
     - "wp-config.php"
     - "wp-content/*.sql"
